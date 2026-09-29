@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TZ CHART REAL - Mapato</title>
+<title>TZ CHAT - Mapato</title>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -96,7 +96,7 @@ Email ikikataa, tumia NIMESAHAU NENOSIRI. OTP itafanya kazi baada ya TZ CHAT kuw
 </div>
 
 <header>
-<span id="ht">TZ CHART REAL</span>
+<span id="ht">TZ CHAT</span>
 <button onclick="openCurrentChat()" style="width:38px;height:38px;border-radius:50%;background:#143a64;color:#fff;border:none;font-size:18px">💬</button>
 </header>
 
@@ -255,7 +255,7 @@ function toast(msg){
 function setStatus(msg){document.getElementById("sts").innerText=msg;}
 function setDiagnostic(){
   const d=document.getElementById("diag");
-  if(d) d.innerText=(navigator.onLine?"Intaneti: OK":"Intaneti: HAKUNA")+" • Firebase Auth: tayari";
+  if(d) d.innerText=(navigator.onLine?"Intaneti: OK":"Intaneti: HAKUNA")+" • Firebase project: "+(firebaseConfig.projectId||"haijulikani")+" • HTTPS: "+(location.protocol==="https:"?"OK":"HAPANA");
 }
 setDiagnostic();
 
@@ -463,16 +463,16 @@ function firebasePhoneError(e){
     "auth/invalid-verification-code":"OTP si sahihi. Angalia SMS kisha jaribu tena.",
     "auth/code-expired":"OTP imeisha muda. Tuma OTP mpya.",
     "auth/too-many-requests":"Maombi yamezuiwa kwa muda. Subiri kidogo kabla ya kuomba OTP nyingine.",
-    "auth/quota-exceeded":"Kikomo cha SMS cha Firebase kimefikiwa.",
+    "auth/quota-exceeded":"Kikomo cha SMS cha Firebase kimefikiwa. Angalia quota/SMS limits za project ya Firebase.",
     "auth/captcha-check-failed":"reCAPTCHA haikukubali. Thibitisha tena.",
-    "auth/operation-not-allowed":"Phone Authentication haijawezeshwa Firebase.",
+    "auth/operation-not-allowed":"Firebase project inayotumiwa na TZ CHAT bado haikubali Phone Sign-in. Hakikisha Phone imewezeshwa kwenye project: tz-chart.",
     "auth/network-request-failed":"Intaneti imekatika. Washa Data/Wi-Fi.",
-    "auth/app-not-authorized":"TZ CHAT iko kwenye domain isiyoruhusiwa. Iweke kwenye HTTPS (mf. Netlify) kisha ongeza domain hiyo Firebase > Authentication > Settings > Authorized domains.",
-    "auth/unauthorized-domain":"Domain hii haijaongezwa Firebase > Authentication > Settings > Authorized domains. content://downloads haiwezi kutumika kama domain ya OTP.",
+    "auth/app-not-authorized":"TZ CHAT iko kwenye domain isiyoruhusiwa. Hakikisha stidestephano735-dev.github.io ipo Firebase > Authentication > Settings > Authorized domains.",
+    "auth/unauthorized-domain":"Domain hii haijaidhinishwa Firebase. Hakikisha stidestephano735-dev.github.io ipo kwenye Authorized domains.",
     "auth/missing-verification-code":"Weka OTP uliyopewa kwa SMS."
   };
   if(c==="RECAPTCHA_NOT_READY") return "reCAPTCHA bado haijawa tayari. Subiri kidogo kisha bonyeza TUMA OTP.";
-  return map[c] || e.message || "OTP haikutumwa. Angalia Firebase Authentication na Authorized domains.";
+  return map[c] || ("OTP haikutumwa. Firebase code: "+(c||"unknown"));
 }
 async function saveOnlineUser(user,name){
   const phone=user.phoneNumber || window.pendingPhone || "";
