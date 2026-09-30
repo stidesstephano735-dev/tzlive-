@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TZ CHAT - Firebase Login</title>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#081e36;color:#fff;font-family:system-ui;height:100vh;display:flex;flex-direction:column}
+header{background:#0a2f57;padding:12px;display:flex;justify-content:space-between;align-items:center;color:#FFD700;font-weight:900}
+.page{display:none;flex:1;overflow:auto;flex-direction:column}.page.active{display:flex}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px}
+.card{background:#143a64;padding:16px;border-radius:16px;text-align:center;border:1px solid #2ecc71;position:relative}
+.dot{position:absolute;top:10px;right:10px;width:12px;height:12px;background:#2ecc71;border-radius:50%}
+.chat{flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.m{max-width:80%;padding:10px 14px;border-radius:18px;font-size:14px;word-break:break-word}
+.me{align-self:flex-end;background:#FFD700;color:#000}.ot{align-self:flex-start;background:#1e4d7a}
+.m img{width:100%;max-width:240px;border-radius:10px;margin-top:6px}
+.bar{display:flex;gap:8px;padding:10px;background:#0a2f57}
+#txt{flex:1;background:#143a64;border:none;padding:12px;border-radius:24px;color:#fff;outline:none}
+.btn{padding:0 18px;background:#FFD700;border:none;border-radius:24px;font-weight:900}
+.btm{height:64px;background:#0a2f57;display:flex;justify-content:space-around;align-items:center}
+.btm div{font-size:11px;opacity:.6;padding:8px 18px;border-radius:12px}.btm div.ac{opacity:1;background:#143a64;color:#FFD700}
+#login{position:fixed;inset:0;background:#081e36;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.authInput{width:100%;max-width:340px;padding:16px;margin:6px 0;border-radius:14px;border:2px solid #315c85;background:#143a64;color:#fff;font-size:16px;outline:none}
+.authBtn{width:100%;max-width:340px;margin-top:10px;padding:15px;border:0;border-radius:14px;background:#FFD700;font-weight:900;font-size:17px}
+.authBtn.alt{background:#143a64;color:#fff;border:1px solid #FFD700}
+.status{min-height:20px;margin-top:10px;font-size:12px;opacity:.8}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#FFD700;color:#000;padding:12px 20px;border-radius:20px;display:none;z-index:20000;font-weight:bold}
+
+.earnWrap{padding:18px;display:flex;flex-direction:column;gap:14px}
+.earnCard{background:#143a64;border:1px solid #315c85;border-radius:18px;padding:18px}
+.earnBalance{font-size:34px;font-weight:900;color:#FFD700;margin-top:6px}
+.earnLabel{opacity:.7;font-size:13px}
+.earnRow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.earnStat{background:#0a2f57;border-radius:14px;padding:13px}
+.earnInput,.earnSelect{width:100%;padding:14px;border-radius:12px;border:1px solid #315c85;background:#0a2f57;color:#fff;font-size:15px;margin-top:7px;outline:none}
+.earnBtn{width:100%;padding:14px;border:0;border-radius:13px;background:#FFD700;color:#000;font-weight:900;font-size:16px;margin-top:10px}
+.tx{background:#0a2f57;border-radius:12px;padding:12px;margin-top:8px;display:flex;justify-content:space-between;gap:10px}
+.tx small{opacity:.7}
+
+
+.monetWrap{padding:16px;display:flex;flex-direction:column;gap:14px}
+.monetCard{background:#143a64;border:1px solid #315c85;border-radius:18px;padding:17px}
+.monetCard h3{color:#FFD700;margin-bottom:8px}
+.monetGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.monetStat{background:#0a2f57;border-radius:13px;padding:13px}
+.monetBtn{width:100%;padding:13px;border:0;border-radius:12px;background:#FFD700;color:#000;font-weight:900;margin-top:9px}
+.monetBtn.alt{background:#0a2f57;color:#fff;border:1px solid #FFD700}
+.monetInput{width:100%;padding:12px;border-radius:11px;border:1px solid #315c85;background:#0a2f57;color:#fff;margin-top:7px;outline:none}
+.premiumOn{border:2px solid #FFD700}
+.adBox{background:#08233f;border:1px dashed #FFD700;border-radius:13px;padding:15px;text-align:center}
+.sponsor{background:#0a2f57;border-radius:13px;padding:13px;margin-top:8px}
+
+</style>
+</head>
+
+<body>
+
+<div id="login">
+<h1 style="color:#FFD700;font-size:34px">TZ CHAT</h1>
+<p style="margin:8px 0 20px;opacity:.7">Karibu TZ CHAT 🇹🇿</p>
+
+<div style="width:100%;max-width:340px;display:flex;gap:8px;margin-bottom:10px">
+  <button id="emailTabBtn" class="authBtn" style="margin:0;font-size:14px" onclick="showLoginMode('email')">EMAIL</button>
+  <button id="phoneTabBtn" class="authBtn alt" style="margin:0;font-size:14px" onclick="showLoginMode('phone')">SIMU / OTP</button>
+</div>
+
+<div id="emailLoginBox" style="width:100%;display:block">
+  <input id="email" class="authInput" type="email" placeholder="Email yako" autocomplete="email">
+  <div style="width:100%;max-width:340px;position:relative"><input id="password" class="authInput" type="password" placeholder="Nenosiri" autocomplete="current-password" style="padding-right:70px"><button type="button" onclick="togglePassword()" style="position:absolute;right:10px;top:13px;background:none;border:0;color:#FFD700;font-weight:900;padding:10px">👁</button></div>
+  <button id="loginBtn" class="authBtn" onclick="loginEmail()">INGIA</button>
+  <button id="registerBtn" class="authBtn alt" onclick="registerEmail()">JISAJILI</button>
+  <button class="authBtn alt" onclick="resetPassword()">NIMESAHAU NENOSIRI</button>
+</div>
+
+<div id="phoneLoginBox" style="width:100%;display:none">
+  <input id="phone" class="authInput" type="tel" placeholder="Namba ya simu (mf. 0712 345 678)" autocomplete="tel">
+  <input id="displayName" class="authInput" type="text" placeholder="Jina lako" autocomplete="name">
+  <div id="recaptcha-container" style="margin:10px 0"></div>
+  <button id="sendOtpBtn" class="authBtn" onclick="sendOTP()">TUMA OTP</button>
+  <input id="otp" class="authInput" type="tel" inputmode="numeric" maxlength="6" placeholder="Ingiza OTP ya tarakimu 6" autocomplete="one-time-code" style="display:none">
+  <button id="verifyOtpBtn" class="authBtn alt" onclick="verifyOTP()" style="display:none">THIBITISHA OTP</button>
+</div>
+
+<p id="sts" class="status">Chagua Email au Simu / OTP.</p>
+<p id="loginHelp" class="status" style="font-size:11px;opacity:.6">
+Email ikikataa, tumia NIMESAHAU NENOSIRI. OTP itafanya kazi baada ya TZ CHAT kuwa kwenye HTTPS na domain yake kuidhinishwa Firebase.
+</p>
+<p id="diag" class="status" style="font-size:10px;opacity:.45"></p>
+</div>
+
+<header>
+<span id="ht">TZ CHAT</span>
+<button onclick="openCurrentChat()" style="width:38px;height:38px;border-radius:50%;background:#143a64;color:#fff;border:none;font-size:18px">💬</button>
+</header>
+
+<div id="p-home" class="page active">
+<small id="count" style="padding:12px;opacity:.7">Watumiaji...</small>
+<div class="grid" id="grid"></div>
+</div>
+
+<div id="p-chat" class="page">
+<div class="chat" id="chatBox"></div>
+<div class="bar">
+<label style="width:44px;height:44px;background:#143a64;border-radius:50%;display:flex;align-items:center;justify-content:center">
+📷
+<input type="file" hidden accept="image/*" onchange="tumaPicha(this)">
+</label>
+<input id="txt" placeholder="Andika..." onkeydown="if(event.key==='Enter')tuma()">
+<button class="btn" onclick="tuma()">TUMA</button>
+</div>
+</div>
+
+
+<div id="p-earn" class="page">
+<div class="earnWrap">
+  <div class="earnCard">
+    <div class="earnLabel">💰 Salio la Mapato</div>
+    <div id="earnBalance" class="earnBalance">TSh 0</div>
+    <div class="earnLabel" id="earnNote">Mapato yako yataonekana hapa.</div>
+  </div>
+
+  <div class="earnRow">
+    <div class="earnStat"><div class="earnLabel">Jumla uliyopata</div><b id="totalEarned">TSh 0</b></div>
+    <div class="earnStat"><div class="earnLabel">Jumla uliyolipwa</div><b id="totalWithdrawn">TSh 0</b></div>
+  </div>
+
+  <div class="earnCard">
+    <b>💳 Omba malipo</b>
+    <select id="payProvider" class="earnSelect">
+      <option value="M-Pesa">M-Pesa</option>
+      <option value="Airtel Money">Airtel Money</option>
+      <option value="Mixx by Yas">Mixx by Yas</option>
+      <option value="HaloPesa">HaloPesa</option>
+    </select>
+    <input id="payPhone" class="earnInput" type="tel" placeholder="Namba ya simu ya malipo">
+    <input id="payAmount" class="earnInput" type="number" min="1000" step="100" placeholder="Kiasi cha kutoa (TSh)">
+    <button class="earnBtn" onclick="ombaMalipo()">OMBA MALIPO</button>
+    <div id="payStatus" class="status"></div>
+  </div>
+
+  <div class="earnCard">
+    <b>📋 Historia ya malipo</b>
+    <div id="txList"><small style="opacity:.7">Inapakia...</small></div>
+  </div>
+</div>
+</div>
+
+
+<div id="p-money" class="page">
+<div class="monetWrap">
+  <div class="monetCard">
+    <h3>💰 MAPATO YA TZ CHAT</h3>
+    <div class="monetGrid">
+      <div class="monetStat"><small>Mapato</small><br><b id="mRevenue">TSh 0</b></div>
+      <div class="monetStat"><small>VIP</small><br><b id="mVip">0</b></div>
+      <div class="monetStat"><small>Matangazo</small><br><b id="mAds">0</b></div>
+      <div class="monetStat"><small>Udhamini</small><br><b id="mSponsors">0</b></div>
+    </div>
+  </div>
+
+  <div class="monetCard">
+    <h3>⭐ PREMIUM / VIP</h3>
+    <p style="opacity:.75">Vipengele vya kulipia kwa watumiaji.</p>
+    <ul style="margin:10px 0 0 18px;line-height:1.8">
+      <li>Badge ya VIP ⭐</li><li>Chat bila matangazo</li><li>Mandhari maalum</li><li>Vipengele vya ziada</li>
+    </ul>
+    <select id="vipPlan" class="monetInput">
+      <option value="3000">VIP Wiki — TSh 3,000</option>
+      <option value="10000">VIP Mwezi — TSh 10,000</option>
+      <option value="50000">VIP Miezi 6 — TSh 50,000</option>
+    </select>
+    <button class="monetBtn" onclick="nunuaVip()">⭐ LIPIA VIP</button>
+    <div id="vipStatus" class="status"></div>
+  </div>
+
+  <div class="monetCard">
+    <h3>📢 MATANGAZO</h3>
+    <div class="adBox">Nafasi ya tangazo la biashara<br><small>Banner / Sponsored Post</small></div>
+    <button class="monetBtn" onclick="funguaTangazo()">➕ WEKA TANGAZO</button>
+    <div id="adStatus" class="status"></div>
+  </div>
+
+  <div class="monetCard">
+    <h3>🤝 UDHAMINI</h3>
+    <p style="opacity:.75">Biashara inaweza kulipia kuonekana ndani ya TZ CHAT.</p>
+    <input id="sponsorName" class="monetInput" placeholder="Jina la biashara">
+    <input id="sponsorAmount" class="monetInput" type="number" min="1000" placeholder="Bajeti ya udhamini (TSh)">
+    <button class="monetBtn" onclick="ombaUdhamini()">TUMA OMBI LA UDHAMINI</button>
+    <div id="sponsorStatus" class="status"></div>
+  </div>
+
+  <div class="monetCard">
+    <h3>💳 MALIPO</h3>
+    <p style="opacity:.75">Chagua njia ya malipo inayotumika kwenye huduma za TZ CHAT.</p>
+    <select id="moneyProvider" class="monetInput">
+      <option>M-Pesa</option><option>Airtel Money</option><option>Mixx by Yas</option><option>HaloPesa</option>
+    </select>
+    <input id="moneyPhone" class="monetInput" type="tel" placeholder="Namba ya simu">
+    <button class="monetBtn" onclick="savePaymentMethod()">HIFADHI NJIA YA MALIPO</button>
+    <div id="moneyStatus" class="status"></div>
+  </div>
+</div>
+</div>
+
+<div id="p-me" class="page" style="padding:24px;align-items:center;justify-content:center">
+<div style="font-size:70px">👤</div>
+<h2 id="meN">Mgeni</h2>
+<p id="meEmail" style="opacity:.6;margin-top:8px"></p>
+<p style="opacity:.6;margin-top:6px">TZ 🇹🇿</p>
+<button onclick="toka()" style="margin-top:20px;background:#ff3b3b;color:#fff;padding:10px 20px;border:none;border-radius:10px">Toka</button>
+</div>
+
+<div class="btm">
+<div class="ac" onclick="tab('home',this)">🏠 Nyumbani</div>
+<div onclick="tab('chat',this)">💬 Gumzo <span id="badge" style="background:#FFD700;color:#000;padding:1px 6px;border-radius:6px">0</span></div>
+<div onclick="tab('earn',this)">💰 Mapato</div>
+<div onclick="tab('money',this)">💎 VIP</div>
+<div onclick="tab('me',this)">👤 Mimi</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyD-A7xnSVO3Jgn1I46aUxoB6VrYPVKuKzU",
+  authDomain: "tz-chart.firebaseapp.com",
+  projectId: "tz-chart",
+  storageBucket: "tz-chart.firebasestorage.app",
+  messagingSenderId: "930722478346",
+  appId: "1:930722478346:web:aed8b78b439128690622f3",
+  measurementId: "G-0R3DM4PM8R"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+let jina="", cur="", unsub=null, usersUnsub=null;
+
+function escapeHtml(v){
+  return String(v ?? "").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+}
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.innerText=msg;t.style.display="block";
+  setTimeout(()=>t.style.display="none",2500);
+}
+function setStatus(msg){document.getElementById("sts").innerText=msg;}
+function setDiagnostic(){
+  const d=document.getElementById("diag");
+  if(d) d.innerText=(navigator.onLine?"Intaneti: OK":"Intaneti: HAKUNA")+" • Firebase Auth: tayari";
+}
+setDiagnostic();
+
+
+function tab(p,el){
+  document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
+  document.getElementById("p-"+p).classList.add("active");
+  document.querySelectorAll(".btm div").forEach(x=>x.classList.remove("ac"));
+  if(el)el.classList.add("ac");
+}
+
+
+function setAuthBusy(b){
+  document.querySelectorAll(".authBtn").forEach(x=>x.disabled=!!b);
+  document.querySelectorAll(".authInput").forEach(x=>x.disabled=!!b);
+}
+
+function showLoginMode(mode){
+  const emailMode=mode==="email";
+  document.getElementById("emailLoginBox").style.display=emailMode?"block":"none";
+  document.getElementById("phoneLoginBox").style.display=emailMode?"none":"block";
+  document.getElementById("emailTabBtn").classList.toggle("alt",!emailMode);
+  document.getElementById("phoneTabBtn").classList.toggle("alt",emailMode);
+  setStatus(emailMode?"Ingiza email na nenosiri.":"Ingiza namba ya simu kisha thibitisha reCAPTCHA.");
+  if(!emailMode && !recaptchaVerifier) setTimeout(()=>setupRecaptcha(),100);
+}
+
+function togglePassword(){
+  const p=document.getElementById("password");
+  if(!p)return;
+  p.type=p.type==="password"?"text":"password";
+}
+
+function cleanEmail(){
+  const el=document.getElementById("email");
+  if(!el) return "";
+  // Ondoa nafasi za kawaida na Unicode/zero-width characters ambazo
+  // zinaweza kufanya email halali ionekane si sahihi.
+  return String(el.value||"")
+    .replace(/[\u200B-\u200D\uFEFF]/g,"")
+    .replace(/\s+/g,"")
+    .trim()
+    .toLowerCase();
+}
+
+function validEmail(email){
+  const e=String(email||"").trim().toLowerCase();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+}
+
+async function loginEmail(){
+  const email=cleanEmail();
+  const password=document.getElementById("password").value;
+  // Rudisha email iliyosafishwa kwenye input ili mtumiaji aone kilichotumwa Firebase.
+  document.getElementById("email").value=email;
+  if(!email){setStatus("Weka email yako.");return;}
+  if(!validEmail(email)){
+    setStatus("Barua pepe uliyoandika si sahihi. Mfano: jina@gmail.com");
+    return;
+  }
+  if(!password){setStatus("Weka nenosiri.");return;}
+  if(!navigator.onLine){setStatus("Hakuna intaneti. Washa Data/Wi-Fi.");return;}
+
+  setAuthBusy(true); setStatus("Inaingia Firebase...");
+  let timeoutId=null;
+  try{
+    const loginPromise=auth.signInWithEmailAndPassword(email,password);
+    const timeoutPromise=new Promise((_,reject)=>{
+      timeoutId=setTimeout(()=>{
+        const err=new Error("LOGIN_TIMEOUT");
+        err.code="login/timeout";
+        reject(err);
+      },15000);
+    });
+    await Promise.race([loginPromise,timeoutPromise]);
+    setStatus("Umeingia kwenye TZ CHAT.");
+  }catch(e){
+    if(e && e.code==="login/timeout"){
+      setStatus("Firebase haijajibu. Angalia intaneti na Firebase Authentication.");
+    }else{
+      setStatus(firebaseEmailError(e));
+    }
+  }finally{
+    clearTimeout(timeoutId);
+    setTimeout(()=>setAuthBusy(false),300);
+  }
+}
+
+async function registerEmail(){
+  const email=cleanEmail();
+  const password=document.getElementById("password").value;
+  if(!email){setStatus("Weka email yako.");return;}
+  if(!validEmail(email)){setStatus("Email si sahihi. Mfano: jina@gmail.com");return;}
+  if(!password){setStatus("Weka nenosiri.");return;}
+  if(password.length<6){setStatus("Nenosiri liwe na angalau herufi 6.");return;}
+
+  setAuthBusy(true); setStatus("Inakagua na kutengeneza akaunti...");
+  try{
+    const cred=await auth.createUserWithEmailAndPassword(email,password);
+    try{ await cred.user.sendEmailVerification(); }catch(verifyErr){ console.warn("Email verification haikutumwa:", verifyErr); }
+    const name=email.split("@")[0] || "Mtumiaji";
+    try{
+      await cred.user.updateProfile({displayName:name});
+      await saveOnlineUser(cred.user,name);
+    }catch(profileErr){
+      // Akaunti tayari imetengenezwa hata kama Firestore/profile save imechelewa.
+    }
+    setStatus("Akaunti imetengenezwa. Angalia email yako kwa uthibitisho.");
+  }catch(e){
+    if(e && e.code==="auth/email-already-in-use"){
+      setStatus("Email hii tayari ipo. Bonyeza INGIA au NIMESAHAU NENOSIRI.");
+      showLoginMode("email");
+    }else{
+      setStatus(firebaseEmailError(e));
+    }
+  }finally{setAuthBusy(false);}
+}
+
+async function resetPassword(){
+  const email=cleanEmail();
+  if(!email){setStatus("Weka email yako kwanza.");return;}
+  if(!validEmail(email)){setStatus("Barua pepe uliyoandika si sahihi. Mfano: jina@gmail.com");return;}
+  setAuthBusy(true); setStatus("Inatuma email ya kubadilisha nenosiri...");
+  try{
+    await auth.sendPasswordResetEmail(email);
+    setStatus("Email imetumwa. Angalia Inbox na Spam/Junk.");
+  }catch(e){
+    setStatus(firebaseEmailError(e));
+  }finally{setAuthBusy(false);}
+}
+
+function firebaseEmailError(e){
+  const c=e&&e.code?e.code:"";
+  const map={
+    "auth/invalid-email":"Firebase imekataa muundo wa email. Tumia mfano jina@gmail.com.",
+    "auth/missing-email":"Weka email yako.",
+    "auth/user-not-found":"Email hii haijasajiliwa Firebase. Bonyeza JISAJILI kwanza.",
+    "auth/wrong-password":"Nenosiri si sahihi.",
+    "auth/invalid-credential":"Email au nenosiri si sahihi. Kama umesahau, bonyeza NIMESAHAU NENOSIRI.",
+    "auth/invalid-login-credentials":"Email au nenosiri si sahihi. Bonyeza NIMESAHAU NENOSIRI ili kuweka nenosiri jipya.",
+    "auth/email-already-in-use":"Email hii tayari imesajiliwa. Bonyeza INGIA.",
+    "auth/weak-password":"Nenosiri ni dhaifu. Tumia angalau herufi 6.",
+    "auth/too-many-requests":"Maombi yamezuiwa kwa muda. Subiri kidogo.",
+    "auth/network-request-failed":"Intaneti imekatika. Washa Data/Wi-Fi.",
+    "auth/operation-not-allowed":"Email/Password haijawezeshwa Firebase.",
+    "login/timeout":"Firebase haijajibu kwa wakati. Angalia intaneti na Firebase Authentication."
+  };
+  return map[c] || e.message || "Login ya Email imeshindikana.";
+}
+
+let confirmationResult=null;
+let recaptchaVerifier=null;
+
+function normalizeTZPhone(v){
+  let s=String(v||"").replace(/[^0-9+]/g,"");
+  if(s.startsWith("00")) s="+"+s.slice(2);
+  if(s.startsWith("255")) s="+"+s;
+  if(s.startsWith("0")) s="+255"+s.slice(1);
+  return s;
+}
+
+function isValidTzPhone(v){
+  return /^\+255[67]\d{8}$/.test(v);
+}
+
+async function setupRecaptcha(){
+  if(recaptchaVerifier) return recaptchaVerifier;
+  recaptchaVerifier=new firebase.auth.RecaptchaVerifier("recaptcha-container",{
+    size:"normal",
+    callback:function(){ setStatus("CAPTCHA imethibitishwa. Bonyeza TUMA OTP."); },
+    "expired-callback":function(){ setStatus("reCAPTCHA imeisha. Thibitisha tena."); }
+  });
+  try{
+    await recaptchaVerifier.render();
+    return recaptchaVerifier;
+  }catch(e){
+    try{ recaptchaVerifier.clear(); }catch(_e){}
+    recaptchaVerifier=null;
+    setStatus("reCAPTCHA haijafunguka. Fungua TZ CHAT kwenye HTTPS.");
+    return null;
+  }
+}
+
+async function sendOTP(){
+  const phone=normalizeTZPhone(document.getElementById("phone").value.trim());
+  const name=document.getElementById("displayName").value.trim();
+  if(!isValidTzPhone(phone)){
+    setStatus("Weka namba sahihi ya Tanzania, mfano +255712345678.");
+    return;
+  }
+  if(!navigator.onLine){
+    setStatus("Hakuna intaneti. Washa Data/Wi-Fi.");
+    return;
+  }
+  setAuthBusy(true);
+  setStatus("Inatuma OTP kwa "+phone+"...");
+  try{
+    if(!recaptchaVerifier) await setupRecaptcha();
+    if(!recaptchaVerifier) throw new Error("RECAPTCHA_NOT_READY");
+    confirmationResult=await auth.signInWithPhoneNumber(phone,recaptchaVerifier);
+    window.pendingPhone=phone;
+    window.pendingName=name;
+    document.getElementById("otp").style.display="block";
+    document.getElementById("verifyOtpBtn").style.display="block";
+    document.getElementById("sendOtpBtn").innerText="TUMA OTP TENA";
+    setStatus("OTP imetumwa kwa "+phone+". Angalia SMS yako.");
+  }catch(e){
+    try{ if(recaptchaVerifier) recaptchaVerifier.clear(); }catch(_e){}
+    recaptchaVerifier=null;
+    const box=document.getElementById("recaptcha-container");
+    if(box) box.innerHTML="";
+    setStatus(firebasePhoneError(e));
+    setTimeout(()=>setupRecaptcha(),300);
+  }finally{
+    setAuthBusy(false);
+  }
+}
+
+async function verifyOTP(){
+  const code=document.getElementById("otp").value.trim();
+  const name=document.getElementById("displayName").value.trim();
+  if(!confirmationResult){
+    setStatus("Tuma OTP kwanza.");
+    return;
+  }
+  if(!/^\d{6}$/.test(code)){
+    setStatus("OTP iwe na tarakimu 6.");
+    return;
+  }
+  setAuthBusy(true);
+  setStatus("Inathibitisha OTP...");
+  try{
+    const cred=await confirmationResult.confirm(code);
+    const finalName=name || window.pendingName || cred.user.displayName || (cred.user.phoneNumber||window.pendingPhone||"").slice(-9) || "Mtumiaji";
+    if(finalName && cred.user.displayName!==finalName) await cred.user.updateProfile({displayName:finalName});
+    await saveOnlineUser(cred.user,finalName);
+    setStatus("Umeingia kwenye TZ CHAT.");
+  }catch(e){
+    setStatus(firebasePhoneError(e));
+  }finally{
+    setAuthBusy(false);
+  }
+}
+
+function firebasePhoneError(e){
+  const c=e&&e.code?e.code:"";
+  const map={
+    "auth/invalid-phone-number":"Namba ya simu si sahihi.",
+    "auth/missing-phone-number":"Weka namba ya simu.",
+    "auth/invalid-verification-code":"OTP si sahihi. Angalia SMS kisha jaribu tena.",
+    "auth/code-expired":"OTP imeisha muda. Tuma OTP mpya.",
+    "auth/too-many-requests":"Maombi yamezuiwa kwa muda. Subiri kidogo kabla ya kuomba OTP nyingine.",
+    "auth/quota-exceeded":"Kikomo cha SMS cha Firebase kimefikiwa.",
+    "auth/captcha-check-failed":"reCAPTCHA haikukubali. Thibitisha tena.",
+    "auth/operation-not-allowed":"Phone Authentication haijawezeshwa Firebase.",
+    "auth/network-request-failed":"Intaneti imekatika. Washa Data/Wi-Fi.",
+    "auth/app-not-authorized":"TZ CHAT iko kwenye domain isiyoruhusiwa. Iweke kwenye HTTPS (mf. Netlify) kisha ongeza domain hiyo Firebase > Authentication > Settings > Authorized domains.",
+    "auth/unauthorized-domain":"Domain hii haijaongezwa Firebase > Authentication > Settings > Authorized domains. content://downloads haiwezi kutumika kama domain ya OTP.",
+    "auth/missing-verification-code":"Weka OTP uliyopewa kwa SMS."
+  };
+  if(c==="RECAPTCHA_NOT_READY") return "reCAPTCHA bado haijawa tayari. Subiri kidogo kisha bonyeza TUMA OTP.";
+  return map[c] || e.message || "OTP haikutumwa. Angalia Firebase Authentication na Authorized domains.";
+}
+async function saveOnlineUser(user,name){
+  const phone=user.phoneNumber || window.pendingPhone || "";
+  const finalName=name || user.displayName || phone.slice(-9) || "Mtumiaji";
+  jina=finalName;
+  await db.collection("online_users").doc(user.uid).set({
+    uid:user.uid,name:finalName,phone:phone,online:true,
+    lastSeen:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true});
+}
+
+auth.onAuthStateChanged(async user=>{
+  if(!user){
+    document.getElementById("login").style.display="flex";
+    document.getElementById("sts").innerText="Ingiza namba yako ya simu.";
+    return;
+  }
+  const name=user.displayName || user.phoneNumber || "Mtumiaji";
+  try{await saveOnlineUser(user,name);}catch(e){toast("Firestore haijaruhusu kuhifadhi mtumiaji.");}
+  document.getElementById("login").style.display="none";
+  document.getElementById("meN").innerText=name;
+  document.getElementById("meEmail").innerText=user.phoneNumber || user.email || "";
+  loadUsers();
+  loadWallet();
+  loadTransactions();
+  loadMonetization();
+});
+
+function loadUsers(){
+  if(usersUnsub)usersUnsub();
+  usersUnsub=db.collection("online_users").where("online","==",true).onSnapshot(snapshot=>{
+    const grid=document.getElementById("grid");
+    grid.innerHTML="";
+    let count=0;
+    snapshot.forEach(doc=>{
+      const user=doc.data();
+      if(doc.id===auth.currentUser.uid)return;
+      count++;
+      const div=document.createElement("div");
+      div.className="card";
+      div.innerHTML=`<div class="dot"></div><b>${escapeHtml(user.name)}</b><br><small>🟢 Online</small>`;
+      div.onclick=()=>{
+        cur={uid:user.uid,name:user.name,phone:user.phoneNumber};
+        document.getElementById("ht").innerText=user.name;
+        tab("chat",document.querySelectorAll(".btm div")[1]);
+        listenChat();
+      };
+      grid.appendChild(div);
+    });
+    document.getElementById("count").innerText="Watu Online: "+count+" • LIVE";
+  },e=>{document.getElementById("count").innerText="Tatizo la Firestore";});
+}
+
+function getId(a,b){return [a,b].sort().join("_");}
+
+function listenChat(){
+  if(!cur || !auth.currentUser)return;
+  if(unsub){unsub();unsub=null;}
+  const id=getId(auth.currentUser.uid,cur.uid);
+
+  unsub=db.collection("messages").where("chatId","==",id).onSnapshot(snapshot=>{
+    const messages=[];
+    snapshot.forEach(doc=>messages.push({id:doc.id,...doc.data()}));
+    messages.sort((a,b)=>(a.time?.toMillis?.()||0)-(b.time?.toMillis?.()||0));
+    const box=document.getElementById("chatBox");
+    box.innerHTML="";
+    messages.forEach(m=>{
+      const div=document.createElement("div");
+      div.className="m "+(m.fromUid===auth.currentUser.uid?"me":"ot");
+      let content="";
+      if(m.text)content+=escapeHtml(m.text);
+      if(m.image)content+=`<br><img src="${m.image}" alt="picha">`;
+      div.innerHTML=`<b style="font-size:10px">${escapeHtml(m.fromName||"Mtumiaji")}</b><br>${content}`;
+      box.appendChild(div);
+    });
+    document.getElementById("badge").innerText=messages.length;
+    box.scrollTop=box.scrollHeight;
+  },e=>toast("Chat haijasomeka: "+e.message));
+}
+
+async function tuma(){
+  const input=document.getElementById("txt");
+  const text=input.value.trim();
+  const user=auth.currentUser;
+  if(!user){toast("Ingia kwanza.");return;}
+  if(!cur){toast("Chagua rafiki kwanza.");return;}
+  if(!text)return;
+
+  try{
+    await db.collection("messages").add({
+      fromUid:user.uid,
+      fromName:jina,
+      toUid:cur.uid,
+      toName:cur.name,
+      text:text,
+      chatId:getId(user.uid,cur.uid),
+      time:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    input.value="";
+  }catch(e){toast("Ujumbe haujatumwa: "+e.message);}
+}
+
+function tumaPicha(input){
+  const file=input.files[0];
+  if(!file)return;
+  if(!cur){toast("Chagua rafiki kwanza.");input.value="";return;}
+  if(file.size>900000){toast("Picha ni kubwa. Chagua chini ya 900KB.");input.value="";return;}
+
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      await db.collection("messages").add({
+        fromUid:auth.currentUser.uid,
+        fromName:jina,
+        toUid:cur.uid,
+        toName:cur.name,
+        image:e.target.result,
+        chatId:getId(auth.currentUser.uid,cur.uid),
+        time:firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }catch(err){toast("Picha haijatumwa: "+err.message);}
+  };
+  reader.readAsDataURL(file);
+  input.value="";
+}
+
+
+function money(n){
+  return "TSh " + Number(n||0).toLocaleString("en-TZ");
+}
+
+async function loadWallet(){
+  const user=auth.currentUser;
+  if(!user)return;
+  try{
+    const snap=await db.collection("wallets").doc(user.uid).get();
+    const w=snap.exists?snap.data():{};
+    document.getElementById("earnBalance").innerText=money(w.balance||0);
+    document.getElementById("totalEarned").innerText=money(w.totalEarned||0);
+    document.getElementById("totalWithdrawn").innerText=money(w.totalWithdrawn||0);
+  }catch(e){
+    document.getElementById("earnNote").innerText="Wallet haijasomeka: "+(e.message||"tatizo");
+  }
+}
+
+async function ombaMalipo(){
+  const user=auth.currentUser;
+  const status=document.getElementById("payStatus");
+  if(!user){status.innerText="Ingia kwanza.";return;}
+
+  const provider=document.getElementById("payProvider").value;
+  const phone=document.getElementById("payPhone").value.trim();
+  const amount=Number(document.getElementById("payAmount").value);
+
+  if(!phone || phone.length<9){
+    status.innerText="Weka namba sahihi ya simu.";
+    return;
+  }
+  if(!amount || amount<1000){
+    status.innerText="Kiasi cha chini ni TSh 1,000.";
+    return;
+  }
+
+  status.innerText="Inatuma ombi...";
+  try{
+    const walletRef=db.collection("wallets").doc(user.uid);
+    const walletSnap=await walletRef.get();
+    const wallet=walletSnap.exists?walletSnap.data():{};
+    const balance=Number(wallet.balance||0);
+
+    if(amount>balance){
+      status.innerText="Salio halitoshi.";
+      return;
+    }
+
+    await db.collection("withdrawals").add({
+      uid:user.uid,
+      name:user.displayName || (user.phoneNumber || "").slice(-9) || "Mtumiaji",
+      accountPhone:user.phoneNumber || "",
+      provider:provider,
+      phone:phone,
+      amount:amount,
+      status:"pending",
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await walletRef.set({
+      balance:firebase.firestore.FieldValue.increment(-amount),
+      totalWithdrawn:firebase.firestore.FieldValue.increment(amount)
+    },{merge:true});
+
+    document.getElementById("payPhone").value="";
+    document.getElementById("payAmount").value="";
+    status.innerText="Ombi limepokelewa. Hali: INASUBIRI.";
+    await loadWallet();
+    loadTransactions();
+  }catch(e){
+    status.innerText="Ombi limekataa: "+(e.message||"tatizo");
+  }
+}
+
+async function loadTransactions(){
+  const user=auth.currentUser;
+  const box=document.getElementById("txList");
+  if(!user || !box)return;
+
+  try{
+    const snap=await db.collection("withdrawals").where("uid","==",user.uid).get();
+    const rows=[];
+    snap.forEach(d=>rows.push({id:d.id,...d.data()}));
+    rows.sort((a,b)=>(b.createdAt?.toMillis?.()||0)-(a.createdAt?.toMillis?.()||0));
+
+    if(!rows.length){
+      box.innerHTML='<small style="opacity:.7">Bado hakuna ombi la malipo.</small>';
+      return;
+    }
+
+    box.innerHTML=rows.map(r=>{
+      const date=r.createdAt?.toDate?.();
+      const ds=date?date.toLocaleString("sw-TZ"):"";
+      return `<div class="tx">
+        <div><b>${escapeHtml(r.provider)}</b><br><small>${escapeHtml(r.phone)} • ${escapeHtml(r.status)}</small><br><small>${escapeHtml(ds)}</small></div>
+        <b>${money(r.amount)}</b>
+      </div>`;
+    }).join("");
+  }catch(e){
+    box.innerHTML='<small>Historia haijasomeka.</small>';
+  }
+}
+
+
+async function nunuaVip(){
+  const user=auth.currentUser;
+  const s=document.getElementById("vipStatus");
+  if(!user){s.innerText="Ingia kwanza.";return;}
+  const amount=Number(document.getElementById("vipPlan").value);
+  try{
+    await db.collection("vip_orders").add({
+      uid:user.uid,phone:user.phoneNumber,amount:amount,
+      status:"pending",createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    s.innerText="Ombi la VIP limehifadhiwa. Malipo yataunganishwa na payment API.";
+  }catch(e){s.innerText="Imeshindikana: "+e.message;}
+}
+
+async function funguaTangazo(){
+  const user=auth.currentUser;
+  const s=document.getElementById("adStatus");
+  if(!user){s.innerText="Ingia kwanza.";return;}
+  try{
+    await db.collection("ad_requests").add({
+      uid:user.uid,phone:user.phoneNumber,status:"pending",
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    s.innerText="Ombi la tangazo limetumwa kwa msimamizi.";
+  }catch(e){s.innerText="Imeshindikana: "+e.message;}
+}
+
+async function ombaUdhamini(){
+  const user=auth.currentUser;
+  const s=document.getElementById("sponsorStatus");
+  const name=document.getElementById("sponsorName").value.trim();
+  const amount=Number(document.getElementById("sponsorAmount").value);
+  if(!user){s.innerText="Ingia kwanza.";return;}
+  if(!name || amount<1000){s.innerText="Jaza jina la biashara na bajeti.";return;}
+  try{
+    await db.collection("sponsorship_requests").add({
+      uid:user.uid,phone:user.phoneNumber,business:name,budget:amount,
+      status:"pending",createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    s.innerText="Ombi la udhamini limetumwa.";
+    document.getElementById("sponsorName").value="";
+    document.getElementById("sponsorAmount").value="";
+  }catch(e){s.innerText="Imeshindikana: "+e.message;}
+}
+
+async function savePaymentMethod(){
+  const user=auth.currentUser;
+  const s=document.getElementById("moneyStatus");
+  const provider=document.getElementById("moneyProvider").value;
+  const phone=document.getElementById("moneyPhone").value.trim();
+  if(!user){s.innerText="Ingia kwanza.";return;}
+  if(!phone){s.innerText="Weka namba ya simu.";return;}
+  try{
+    await db.collection("payment_methods").doc(user.uid).set({
+      uid:user.uid,provider:provider,phone:phone,
+      updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+    },{merge:true});
+    s.innerText="Njia ya malipo imehifadhiwa.";
+  }catch(e){s.innerText="Imeshindikana: "+e.message;}
+}
+
+async function loadMonetization(){
+  const user=auth.currentUser;
+  if(!user)return;
+  try{
+    const vip=await db.collection("vip_orders").where("uid","==",user.uid).get();
+    const ads=await db.collection("ad_requests").where("uid","==",user.uid).get();
+    const sp=await db.collection("sponsorship_requests").where("uid","==",user.uid).get();
+    document.getElementById("mVip").innerText=vip.size;
+    document.getElementById("mAds").innerText=ads.size;
+    document.getElementById("mSponsors").innerText=sp.size;
+  }catch(e){}
+}
+
+function openCurrentChat(){
+  if(cur){
+    tab("chat",document.querySelectorAll(".btm div")[1]);
+    listenChat();
+  }else toast("Chagua mtu kwenye Nyumbani.");
+}
+
+async function toka(){
+  const user=auth.currentUser;
+  try{
+    if(user){
+      await db.collection("online_users").doc(user.uid).set({
+        online:false,lastSeen:firebase.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+    }
+  }catch(e){}
+  if(unsub)unsub();
+  if(usersUnsub)usersUnsub();
+  await auth.signOut();
+  jina="";cur="";
+}
+
+window.addEventListener("beforeunload",()=>{
+  const user=auth.currentUser;
+  if(user){
+    db.collection("online_users").doc(user.uid).set({online:false},{merge:true}).catch(()=>{});
+  }
+});</script>
+
+<script>
+
+function checkHosting(){
+  const scheme=location.protocol;
+  const help=document.getElementById("loginHelp");
+  if((scheme==="file:" || scheme==="content:") && help){
+    help.innerText="⚠️ Umefungua faili moja kwa moja kwenye Downloads. Email inaweza kujaribiwa, lakini Phone/OTP haiwezi kufanya kazi hapa. Pakia TZ CHAT kwenye HTTPS (Netlify) kwanza.";
+    help.style.opacity="1";
+  }
+}
+
+window.addEventListener("load",()=>{
+  setDiagnostic();
+  checkHosting();
+  const u=auth.currentUser;
+  if(!u) showLoginMode("email");
+});
+window.addEventListener("online",setDiagnostic);
+window.addEventListener("offline",setDiagnostic);
+</script>
+</body>
+</html>
